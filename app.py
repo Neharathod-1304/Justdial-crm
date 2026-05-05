@@ -237,32 +237,25 @@ def export_leads():
 @app.route('/api/sync-justdial')
 @login_required
 def sync():
-    dummy_data = [
-        Lead(customer_name="Pooja Verma", phone="8222333444", service="UI/UX Audit", status="Lost"),
-        Lead(customer_name="Sameer Khan", phone="9111222333", service="Content Writing", status="Lost"),
-        Lead(customer_name="Kavita Iyer", phone="9555443322", service="Graphic Design", status="Contacted"),
-        Lead(customer_name="Rohan Deshmukh", phone="8811223344", service="E-commerce Website", status="Contacted"),
-        Lead(customer_name="Anjali Gupta", phone="9900112233", service="Social Media Marketing", status="Converted"),
-        Lead(customer_name="Vikram Rathore", phone="7766554433", service="Mobile App Development", status="Converted"),
-        Lead(customer_name="Priya Singh", phone="8877665544", service="Logo Design", status="Lost"),
-        Lead(customer_name="Amit Sharma", phone="9123456789", service="SEO Services", status="Contacted"),
-        Lead(customer_name="Suresh Kumar", phone="9988776655", service="Web Design", status="Contacted"),
-        Lead(customer_name="Rahul Mehta", phone="9812345678", service="CCTV Installation", status="Contacted"),
+    sample_leads = [
+        Lead(customer_name="Pooja Verma", phone="8222333444", service_query="UI/UX Audit", status="Lost"),
+        Lead(customer_name="Sameer Khan", phone="9111222333", service_query="Content Writing", status="Lost"),
+        Lead(customer_name="Kavita Iyer", phone="9555443322", service_query="Graphic Design", status="Contacted"),
+        Lead(customer_name="Rohan Deshmukh", phone="8811223344", service_query="E-commerce Website", status="Contacted"),
+        Lead(customer_name="Anjali Gupta", phone="9900112233", service_query="Social Media Marketing", status="Converted"),
+        Lead(customer_name="Vikram Rathore", phone="7766554433", service_query="Mobile App Development", status="Converted"),
+        Lead(customer_name="Priya Singh", phone="8877665544", service_query="Logo Design", status="Lost"),
+        Lead(customer_name="Amit Sharma", phone="9123456789", service_query="SEO Services", status="Contacted"),
+        Lead(customer_name="Suresh Kumar", phone="9988776655", service_query="Web Design", status="Contacted"),
+        Lead(customer_name="Rahul Mehta", phone="9812345678", service_query="CCTV Installation", status="Contacted"),
     ]
 
-    for item in dummy_data:
-        exists = Lead.query.filter_by(phone=item['mobile']).first()
-
-        if not exists:
-            new = Lead(
-                customer_name=item['name'],
-                phone=item['mobile'],
-                product_query=item['query']
-            )
-            db.session.add(new)
-
+    Lead.query.delete()
+    db.session.add_all(sample_leads)
     db.session.commit()
-    flash("Leads Synced!", "success")
+
+    flash("10 Leads Synced Successfully!", "success")
+    return redirect('/')
 
     return redirect('/')
 
