@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller CRM | Justdial</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --sidebar-width: 250px;
+            --primary-blue: #0052cc;
+            --bg-light: #f4f5f7;
+        }
+        body { background-color: var(--bg-light); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Sidebar Design */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            background: #ffffff;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px;
+        }
+        .main-content { margin-left: var(--sidebar-width); padding: 30px; }
+        
+        /* Premium Cards */
+        .stat-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        
+        /* Status Badges */
+        .badge-new { background: #e3f2fd; color: #0d47a1; }
+        .badge-contacted { background: #fff3e0; color: #e65100; }
+        .badge-won { background: #e8f5e9; color: #1b5e20; }
+        .badge-lost { background: #ffebee; color: #b71c1c; }
+        
+        .table { background: white; border-radius: 15px; overflow: hidden; }
+        .search-box { border-radius: 25px; padding-left: 20px; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar d-none d-md-block">
+        <h4 class="fw-bold text-primary mb-4">Justdial CRM</h4>
+        <nav class="nav flex-column">
+            <a class="nav-link active" href="#"><i class="bi bi-grid-1x2-fill me-2"></i> Dashboard</a>
+            <a class="nav-link text-dark" href="/export-leads"><i class="bi bi-file-earmark-excel me-2"></i> Reports</a>
+            <hr>
+            <a class="nav-link text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
+        </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold">Seller Dashboard</h2>
+            <div>
+                <a href="/api/sync-justdial" class="btn btn-primary rounded-pill"><i class="bi bi-arrow-clockwise"></i> Sync Leads</a>
+            </div>
+        </div>
+
+        <!-- Flash Messages[cite: 1, 3] -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+<!-- Stats Section -->
+<!-- Interactive Filters -->
+ {% if follow_up_needed > 0 %}
+<div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex align-items-center mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+    <div>
+        <strong>Attention!</strong> Aapke paas {{ follow_up_needed }} aisi leads hain jinpar 24h se koi action nahi liya gaya.
+    </div>
+</div>
+{% endif %}
+<div class="row mb-3">
+    <div class="col-12 d-flex gap-2">
+        <a href="/" class="btn btn-sm btn-light border rounded-pill px-3 shadow-sm">
+            <i class="bi bi-list-ul me-1"></i> All Leads
+        </a>
+        <a href="/?status=New" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
+            <i class="bi bi-plus-circle me-1"></i> New
+        </a>
+        <a href="/?status=Contacted" class="btn btn-sm btn-outline-warning rounded-pill px-3 shadow-sm">
+            <i class="bi bi-telephone me-1"></i> Contacted
+        </a>
+        <a href="/?status=Converted" class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-sm">
+            <i class="bi bi-check-circle me-1"></i> Won
+        </a>
+        <a href="/?status=Lost" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm">
+            <i class="bi bi-x-circle me-1"></i> Lost
+        </a>
+    </div>
+</div>
+<div class="card p-4 mb-4 shadow-sm">
+    <h5 class="mb-3">Leads Analytics (Candlestick)</h5>
+    <canvas id="candleChart" height="100"></canvas>
+</div>
+
+<!-- Chart Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+
+<script>
+const ctx = document.getElementById('candleChart').getContext('2d');
+
+// Backend data
+const chartData = {{ daily_chart_data | tojson }};
+
+new Chart(ctx, {
+    type: 'candlestick',
+    data: {
+        datasets: [{
+            label: 'Daily Leads',
+            data: chartData
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: true }
+        },
+        scales: {
+            x: {
+                type: 'time',
+                time: {
+                    unit: 'day'
+                }
+            }
+        }
+    }
+});
+</script>
+<canvas id="lineChart" height="100"></canvas>
+
+<script>
+const lineCtx = document.getElementById('lineChart');
+
+new Chart(lineCtx, {
+    type: 'line',
+    data: {
+        labels: {{ daily_chart_data | map(attribute='x') | list | tojson }},
+        datasets: [{
+            label: 'Daily Leads',
+            data: {{ daily_chart_data | map(attribute='c') | list | tojson }},
+            fill: false,
+            tension: 0.3
+        }]
+    }
+});
+</script>
+        <!-- Search Bar -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <form action="/" method="GET" class="d-flex">
+                    <input type="text" name="search" class="form-control search-box shadow-sm me-2" placeholder="Search customer name or phone..." value="{{ request.args.get('search', '') }}">
+                    <button type="submit" class="btn btn-dark rounded-pill px-4">Search</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Leads Table -->
+        <div class="card stat-card border-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Customer</th>
+                            <th>Phone</th>
+                            <th>Service Query</th>
+                            <th>Date Received</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in leads %}
+                        <tr>
+                            <td class="ps-4 fw-bold">{{ lead.customer_name }}</td>
+                            <td>{{ lead.phone }}</td>
+                            <td><span class="text-muted">{{ lead.product_query }}</span></td>
+                            <td>{{ lead.timestamp.strftime('%d %b, %H:%M') }}</td>
+                            <td>
+                                {% if lead.status == 'New' or not lead.status %}
+                                    <span class="badge badge-new text-primary">New</span>
+                                {% elif lead.status == 'Contacted' %}
+                                    <span class="badge badge-contacted text-warning">Contacted</span>
+                                {% elif lead.status == 'Converted' %}
+                                    <span class="badge badge-won text-success">Converted</span>
+                                {% else %}
+                                    <span class="badge badge-lost text-danger">Lost</span>
+                                {% endif %}
+                            </td>
+
+                           <td>
+                        <input type="text" 
+                               class="form-control form-control-sm border-0 bg-light" 
+                               placeholder="Add note..." 
+                               value="{{ lead.notes if lead.notes else '' }}" 
+                               onchange="updateNote({{ lead.id }}, this.value)"
+                               style="border-radius: 8px; min-width: 150px;">
+                    </td> 
+                            <td class="text-end pe-4">
+                                <a href="https://wa.me/91{{ lead.phone }}" target="_blank" class="btn btn-sm btn-success rounded-pill me-1"><i class="bi bi-whatsapp"></i></a>
+                                
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-pill" data-bs-toggle="dropdown">Status</button>
+                                    <ul class="dropdown-menu shadow">
+                                        <li><a class="dropdown-item" href="/update-status/{{ lead.id }}/Contacted">Mark Contacted</a></li>
+                                        <li><a class="dropdown-item text-success fw-bold" href="/update-status/{{ lead.id }}/Converted">Sale Done</a></li>
+                                        <li><a class="dropdown-item text-danger" href="/update-status/{{ lead.id }}/Lost">Mark Lost</a></li>
+                                    </ul>
+                                </div>
+
+                                <a href="/delete-lead/{{ lead.id }}" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('Delete this lead?')"><i class="bi bi-trash"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-refresh every 5 minutes
+        setTimeout(function(){ window.location.reload(); }, 300000);
+    </script>
+    <script>
+    function updateNote(id, noteValue, InputElement) {
+        InputElement.style.opacity = "0.5"
+
+        fetch(`/update-note/${id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notes: noteValue })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === "success") {
+                inputElement.style.border = "1px solid #28a745";
+                inputElement.style.opacity = "1";
+                setTimeout(()=> {inputElement.style.border ="none"; }, 2000);
+            }
+                    })
+                    
+        .catch(error => {
+         console.error('Error:', error);
+         inputElement.style.border ="1px solid #dc3545";
+         inputElement.style.opacity ="1";
+    });
+}
+
+    
+</script>
+<script>
+// Browser se notification permission mangne ke liye
+function requestNotificationPermission() {
+    if ("Notification" in window) {
+        Notification.requestPermission();
+    }
+}
+
+// Nayi lead aane par alert dikhane ke liye
+function showLeadNotification(count) {
+    if (Notification.permission === "granted") {
+        new Notification("New Leads Alert!", {
+            body: `${count} nayi leads Justdial se sync hui hain.`,
+            icon: "/static/img/logo.png" // Agar aapka logo hai toh
+        });
+    }
+}
+
+// Page load par permission maangein
+document.addEventListener('DOMContentLoaded', requestNotificationPermission);
+</script>
+
+</body>
+</html>
