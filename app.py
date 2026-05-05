@@ -238,8 +238,16 @@ def export_leads():
 @login_required
 def sync():
     dummy_data = [
-        {"name": "Rahul", "mobile": "9876543210", "query": "SEO"},
-        {"name": "Priya", "mobile": "9123456789", "query": "Web Design"}
+        Lead(customer_name="Pooja Verma", phone="8222333444", service="UI/UX Audit", status="Lost"),
+        Lead(customer_name="Sameer Khan", phone="9111222333", service="Content Writing", status="Lost"),
+        Lead(customer_name="Kavita Iyer", phone="9555443322", service="Graphic Design", status="Contacted"),
+        Lead(customer_name="Rohan Deshmukh", phone="8811223344", service="E-commerce Website", status="Contacted"),
+        Lead(customer_name="Anjali Gupta", phone="9900112233", service="Social Media Marketing", status="Converted"),
+        Lead(customer_name="Vikram Rathore", phone="7766554433", service="Mobile App Development", status="Converted"),
+        Lead(customer_name="Priya Singh", phone="8877665544", service="Logo Design", status="Lost"),
+        Lead(customer_name="Amit Sharma", phone="9123456789", service="SEO Services", status="Contacted"),
+        Lead(customer_name="Suresh Kumar", phone="9988776655", service="Web Design", status="Contacted"),
+        Lead(customer_name="Rahul Mehta", phone="9812345678", service="CCTV Installation", status="Contacted"),
     ]
 
     for item in dummy_data:
