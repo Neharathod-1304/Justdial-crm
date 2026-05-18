@@ -46,20 +46,17 @@
 </head>
 <body>
 
-    <!-- Sidebar Navigation -->
     <div class="sidebar d-none d-md-block">
         <h4 class="fw-bold text-primary mb-4">Justdial CRM</h4>
         <nav class="nav flex-column">
-            <a class="nav-link active" href="#"><i class="bi bi-grid-1x2-fill me-2"></i> Dashboard</a>
+            <a class="nav-link active" href="/"><i class="bi bi-grid-1x2-fill me-2"></i> Dashboard</a>
             <a class="nav-link text-dark" href="/export-leads"><i class="bi bi-file-earmark-excel me-2"></i> Reports</a>
             <hr>
             <a class="nav-link text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
         </nav>
     </div>
 
-    <!-- Main Content Area -->
     <div class="main-content">
-        <!-- Top Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fw-bold">Seller Dashboard</h2>
             <div>
@@ -67,7 +64,6 @@
             </div>
         </div>
 
-        <!-- Flash Messages[cite: 1, 3] -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
@@ -78,95 +74,78 @@
             {% endfor %}
           {% endif %}
         {% endwith %}
-<!-- Stats Section -->
-<!-- Interactive Filters -->
- {% if follow_up_needed > 0 %}
-<div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex align-items-center mb-4" role="alert">
-    <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
-    <div>
-        <strong>Attention!</strong> Aapke paas {{ follow_up_needed }} aisi leads hain jinpar 24h se koi action nahi liya gaya.
-    </div>
-</div>
-{% endif %}
-<div class="row mb-3">
-    <div class="col-12 d-flex gap-2">
-        <a href="/" class="btn btn-sm btn-light border rounded-pill px-3 shadow-sm">
-            <i class="bi bi-list-ul me-1"></i> All Leads
-        </a>
-        <a href="/?status=New" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
-            <i class="bi bi-plus-circle me-1"></i> New
-        </a>
-        <a href="/?status=Contacted" class="btn btn-sm btn-outline-warning rounded-pill px-3 shadow-sm">
-            <i class="bi bi-telephone me-1"></i> Contacted
-        </a>
-        <a href="/?status=Converted" class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-sm">
-            <i class="bi bi-check-circle me-1"></i> Won
-        </a>
-        <a href="/?status=Lost" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm">
-            <i class="bi bi-x-circle me-1"></i> Lost
-        </a>
-    </div>
-</div>
-<div class="card p-4 mb-4 shadow-sm">
-    <h5 class="mb-3">Leads Analytics (Candlestick)</h5>
-    <canvas id="candleChart" height="100"></canvas>
-</div>
 
-<!-- Chart Libraries -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
-<script src="https://cdn.jsdelivr.net/npm/luxon"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+        {% if follow_up_needed > 0 %}
+        <div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex align-items-center mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+            <div>
+                <strong>Attention!</strong> Aapke paas {{ follow_up_needed }} aisi leads hain jinpar 24h se koi action nahi liya gaya.
+            </div>
+        </div>
+        {% endif %}
 
-<script>
-const ctx = document.getElementById('candleChart').getContext('2d');
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card p-3 bg-white">
+                    <span class="text-muted small fw-bold">TOTAL LEADS</span>
+                    <h3 class="fw-bold text-dark mt-1 mb-0">{{ total }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card p-3 bg-white">
+                    <span class="text-muted small fw-bold">NEW LEADS</span>
+                    <h3 class="fw-bold text-primary mt-1 mb-0">{{ pending }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card p-3 bg-white">
+                    <span class="text-muted small fw-bold">CONVERTED (WON)</span>
+                    <h3 class="fw-bold text-success mt-1 mb-0">{{ won }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card p-3 bg-white">
+                    <span class="text-muted small fw-bold">CONVERSION RATE</span>
+                    <h3 class="fw-bold text-warning mt-1 mb-0">{{ conv_rate }}%</h3>
+                </div>
+            </div>
+        </div>
 
-// Backend data
-const chartData = {{ daily_chart_data | tojson }};
+        <div class="row mb-3">
+            <div class="col-12 d-flex gap-2">
+                <a href="/" class="btn btn-sm btn-light border rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-list-ul me-1"></i> All Leads
+                </a>
+                <a href="/?status=New" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-plus-circle me-1"></i> New
+                </a>
+                <a href="/?status=Contacted" class="btn btn-sm btn-outline-warning rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-telephone me-1"></i> Contacted
+                </a>
+                <a href="/?status=Converted" class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-check-circle me-1"></i> Won
+                </a>
+                <a href="/?status=Lost" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-x-circle me-1"></i> Lost
+                </a>
+            </div>
+        </div>
 
-new Chart(ctx, {
-    type: 'candlestick',
-    data: {
-        datasets: [{
-            label: 'Daily Leads',
-            data: chartData
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { display: true }
-        },
-        scales: {
-            x: {
-                type: 'time',
-                time: {
-                    unit: 'day'
-                }
-            }
-        }
-    }
-});
-</script>
-<canvas id="lineChart" height="100"></canvas>
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card p-4 shadow-sm border-0 h-100" style="border-radius:15px;">
+                    <h5 class="mb-3 text-muted">Leads Analytics (Candlestick)</h5>
+                    <canvas id="candleChart" height="140"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-4 shadow-sm border-0 h-100" style="border-radius:15px;">
+                    <h5 class="mb-3 text-muted">Leads Acquisition Trend (Line)</h5>
+                    <canvas id="lineChart" height="140"></canvas>
+                </div>
+            </div>
+        </div>
 
-<script>
-const lineCtx = document.getElementById('lineChart');
-
-new Chart(lineCtx, {
-    type: 'line',
-    data: {
-        labels: {{ daily_chart_data | map(attribute='x') | list | tojson }},
-        datasets: [{
-            label: 'Daily Leads',
-            data: {{ daily_chart_data | map(attribute='c') | list | tojson }},
-            fill: false,
-            tension: 0.3
-        }]
-    }
-});
-</script>
-        <!-- Search Bar -->
         <div class="row mb-4">
             <div class="col-md-6">
                 <form action="/" method="GET" class="d-flex">
@@ -176,7 +155,6 @@ new Chart(lineCtx, {
             </div>
         </div>
 
-        <!-- Leads Table -->
         <div class="card stat-card border-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -196,7 +174,7 @@ new Chart(lineCtx, {
                         <tr>
                             <td class="ps-4 fw-bold">{{ lead.customer_name }}</td>
                             <td>{{ lead.phone }}</td>
-                            <td><span class="text-muted">{{ lead.product_query }}</span></td>
+                            <td><span class="text-muted">{{ lead.product_query if lead.product_query else '' }}</span></td>
                             <td>{{ lead.timestamp.strftime('%d %b, %H:%M') }}</td>
                             <td>
                                 {% if lead.status == 'New' or not lead.status %}
@@ -209,15 +187,14 @@ new Chart(lineCtx, {
                                     <span class="badge badge-lost text-danger">Lost</span>
                                 {% endif %}
                             </td>
-
-                           <td>
-                        <input type="text" 
-                               class="form-control form-control-sm border-0 bg-light" 
-                               placeholder="Add note..." 
-                               value="{{ lead.notes if lead.notes else '' }}" 
-                               onchange="updateNote({{ lead.id }}, this.value)"
-                               style="border-radius: 8px; min-width: 150px;">
-                    </td> 
+                            <td>
+                                <input type="text" 
+                                       class="form-control form-control-sm border-0 bg-light" 
+                                       placeholder="Add note..." 
+                                       value="{{ lead.notes if lead.notes else '' }}" 
+                                       onchange="updateNote({{ lead.id }}, this)"
+                                       style="border-radius: 8px; min-width: 150px;">
+                            </td> 
                             <td class="text-end pe-4">
                                 <a href="https://wa.me/91{{ lead.phone }}" target="_blank" class="btn btn-sm btn-success rounded-pill me-1"><i class="bi bi-whatsapp"></i></a>
                                 
@@ -240,14 +217,22 @@ new Chart(lineCtx, {
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        // Auto-refresh every 5 minutes
+        // Auto-refresh page every 5 minutes
         setTimeout(function(){ window.location.reload(); }, 300000);
     </script>
+
     <script>
-    function updateNote(id, noteValue, InputElement) {
-        InputElement.style.opacity = "0.5"
+    // Real-Time Note Syncing Function
+    function updateNote(id, inputElement) {
+        const noteValue = inputElement.value;
+        inputElement.style.opacity = "0.5";
 
         fetch(`/update-note/${id}`, {
             method: 'POST',
@@ -256,43 +241,75 @@ new Chart(lineCtx, {
         })
         .then(response => response.json())
         .then(data => {
+            inputElement.style.opacity = "1";
             if(data.status === "success") {
                 inputElement.style.border = "1px solid #28a745";
-                inputElement.style.opacity = "1";
-                setTimeout(()=> {inputElement.style.border ="none"; }, 2000);
+                setTimeout(()=> { inputElement.style.border = "none"; }, 2000);
+            } else {
+                inputElement.style.border = "1px solid #dc3545";
             }
-                    })
-                    
+        })
         .catch(error => {
-         console.error('Error:', error);
-         inputElement.style.border ="1px solid #dc3545";
-         inputElement.style.opacity ="1";
-    });
-}
-
-    
-</script>
-<script>
-// Browser se notification permission mangne ke liye
-function requestNotificationPermission() {
-    if ("Notification" in window) {
-        Notification.requestPermission();
-    }
-}
-
-// Nayi lead aane par alert dikhane ke liye
-function showLeadNotification(count) {
-    if (Notification.permission === "granted") {
-        new Notification("New Leads Alert!", {
-            body: `${count} nayi leads Justdial se sync hui hain.`,
-            icon: "/static/img/logo.png" // Agar aapka logo hai toh
+             console.error('Error:', error);
+             inputElement.style.opacity = "1";
+             inputElement.style.border = "1px solid #dc3545";
         });
     }
-}
+    </script>
 
-// Page load par permission maangein
-document.addEventListener('DOMContentLoaded', requestNotificationPermission);
-</script>
+    <script>
+    const chartData = {{ daily_chart_data | tojson }};
 
+    // 1. Candlestick Chart Execution
+    const candleCtx = document.getElementById('candleChart').getContext('2d');
+    new Chart(candleCtx, {
+        type: 'candlestick',
+        data: {
+            datasets: [{
+                label: 'Daily Leads Structure',
+                data: chartData
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: 'day' }
+                }
+            }
+        }
+    });
+
+    // 2. Line Chart Execution
+    const lineCtx = document.getElementById('lineChart').getContext('2d');
+    new Chart(lineCtx, {
+        type: 'line',
+        data: {
+            labels: chartData.map(item => item.x),
+            datasets: [{
+                label: 'Acquisition Volume',
+                data: chartData.map(item => item.c),
+                borderColor: '#0052cc',
+                backgroundColor: 'rgba(0, 82, 204, 0.05)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+    </script>
+
+    <script>
+    // Browser Notifications API Management
+    function requestNotificationPermission() {
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
+    }
+    document.addEventListener('DOMContentLoaded', requestNotificationPermission);
+    </script>
 </body>
 </html>
