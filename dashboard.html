@@ -101,7 +101,7 @@
                             <td><span class="text-muted">{{ lead.product_query if lead.product_query else '' }}</span></td>
                             <td>
                                 <span class="badge {% if lead.status=='Converted' %}badge-won{% elif lead.status=='Contacted' %}badge-contacted{% elif lead.status=='Lost' %}badge-lost{% else %}badge-new{% endif %}">
-                                    {{ lead.status }}
+                                    {{ lead.status if lead.status else 'New' }}
                                 </span>
                             </td>
                             <td>
@@ -144,28 +144,48 @@
         });
     }
 
-    // Chart.js Data Logic Injection
-    const labels = {{ chart_labels | tojson }};
-    const values = {{ chart_values | tojson }};
+    // Direct JSON Arrays from Flask
+    const rawLabels = {{ chart_labels | tojson | safe }};
+    const chartValues = {{ chart_values | tojson | safe }};
 
-    // 1. Rendering Bar Chart
-    new Chart(document.getElementById('barChart'), {
+    // 1. Bar Chart Initializer
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    new Chart(barCtx, {
         type: 'bar',
         data: {
-            labels: labels,
-            datasets: [{ label: 'Daily Leads Volume', data: values, backgroundColor: '#0052cc', borderRadius: 6 }]
+            labels: rawLabels,
+            datasets: [{
+                label: 'Daily Leads Volume',
+                data: chartValues,
+                backgroundColor: '#0052cc',
+                borderRadius: 5
+            }]
         },
-        options: { responsive: true }
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
     });
 
-    // 2. Rendering Line Chart
-    new Chart(document.getElementById('lineChart'), {
+    // 2. Line Chart Initializer
+    const lineCtx = document.getElementById('lineChart').getContext('2d');
+    new Chart(lineCtx, {
         type: 'line',
         data: {
-            labels: labels,
-            datasets: [{ label: 'Growth Trend', data: values, borderColor: '#198754', tension: 0.3, fill: true, backgroundColor: 'rgba(25, 135, 84, 0.05)' }]
+            labels: rawLabels,
+            datasets: [{
+                label: 'Growth Trend',
+                data: chartValues,
+                borderColor: '#198754',
+                backgroundColor: 'rgba(25, 135, 84, 0.05)',
+                tension: 0.3,
+                fill: true
+            }]
         },
-        options: { responsive: true }
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
     });
     </script>
 </body>
