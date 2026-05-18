@@ -12,7 +12,7 @@ app = Flask(__name__)
 # Config
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///justdial_leads.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'teztecch_professional_crm_key'
+app.config['SECRET_KEY'] = 'teztecch_secret_key_123'
 
 db = SQLAlchemy(app)
 
@@ -84,22 +84,25 @@ def index():
 
     leads = query.order_by(Lead.id.desc()).all()
 
-    # Summary Statistics Calculations
+    # Metrics
     total = Lead.query.count()
     pending = Lead.query.filter_by(status='New').count()
     won = Lead.query.filter_by(status='Converted').count()
     conv_rate = round((won / total * 100), 1) if total > 0 else 0
     follow_up_needed = Lead.query.filter(Lead.status == 'New', Lead.timestamp < datetime.now() - timedelta(hours=24)).count()
 
-    # Chart Data (Corrected for Bar/Line Charts Volume)
+    # Safe Aggregation logic for charts
     daily_stats = db.session.query(
         func.date(Lead.timestamp).label('date'),
         func.count(Lead.id).label('count')
     ).group_by(func.date(Lead.timestamp)).order_by(func.date(Lead.timestamp)).all()
 
-    # Formatting data for JavaScript Charts
-    chart_labels = [datetime.strptime(str(row.date), '%Y-%m-%d').strftime('%d %b') for row in daily_stats]
-    chart_values = [row.count for row in daily_stats]
+    chart_labels = []
+    chart_values = []
+    for row in daily_stats:
+        if row.date:
+            chart_labels.append(str(row.date))
+            chart_values.append(int(row.count))
 
     return render_template('dashboard.html',
         leads=leads, total=total, pending=pending, won=won,
@@ -141,10 +144,10 @@ def delete_lead(id):
 @app.route('/api/sync-justdial')
 @login_required
 def sync():
-    # Fresh Sample Data for Dynamic Charts Generation
+    # Dynamic Date simulation for active chart bars
     sample_leads = [
-        Lead(customer_name="Pooja Verma", phone="8222333444", product_query="UI/UX Audit", status="Lost", timestamp=datetime.now() - timedelta(days=2)),
-        Lead(customer_name="Sameer Khan", phone="9111222333", product_query="Content Writing", status="Lost", timestamp=datetime.now() - timedelta(days=2)),
+        Lead(customer_name="Pooja Verma", phone="8222333444", product_query="UI/UX Audit", status="New", timestamp=datetime.now() - timedelta(days=2)),
+        Lead(customer_name="Sameer Khan", phone="9111222333", product_query="Content Writing", status="New", timestamp=datetime.now() - timedelta(days=2)),
         Lead(customer_name="Kavita Iyer", phone="9555443322", product_query="Graphic Design", status="Contacted", timestamp=datetime.now() - timedelta(days=1)),
         Lead(customer_name="Rohan Deshmukh", phone="8811223344", product_query="E-commerce Website", status="Contacted", timestamp=datetime.now() - timedelta(days=1)),
         Lead(customer_name="Anjali Gupta", phone="9900112233", product_query="Social Media Marketing", status="Converted", timestamp=datetime.now()),
@@ -152,14 +155,14 @@ def sync():
     ]
     db.session.add_all(sample_leads)
     db.session.commit()
-    flash("Leads Synced Successfully!", "success")
+    flash("Leads Synced with date timestamps!", "success")
     return redirect(url_for('index'))
 
 @app.route('/export-leads')
 @login_required
 def export_leads():
     leads = Lead.query.all()
-    data = [{"Name": l.customer_name, "Phone": l.phone, "Service": l.product_query, "Status": l.status, "Notes": l.notes} for l in leads]
+    data = [{"Name": l.customer_name, "Phone": l.phone, "Status": l.status, "Notes": l.notes} for l in leads]
     df = pd.DataFrame(data)
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
