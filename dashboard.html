@@ -7,46 +7,22 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        :root {
-            --sidebar-width: 250px;
-            --primary-blue: #0052cc;
-            --bg-light: #f4f5f7;
-        }
-        body { background-color: var(--bg-light); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
-        /* Sidebar Design */
-        .sidebar {
-            width: var(--sidebar-width);
-            height: 100vh;
-            position: fixed;
-            background: #ffffff;
-            border-right: 1px solid #e0e0e0;
-            padding: 20px;
-        }
+        :root { --sidebar-width: 250px; --primary-blue: #0052cc; --bg-light: #f4f5f7; }
+        body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; }
+        .sidebar { width: var(--sidebar-width); height: 100vh; position: fixed; background: white; border-right: 1px solid #e0e0e0; padding: 20px; }
         .main-content { margin-left: var(--sidebar-width); padding: 30px; }
-        
-        /* Premium Cards */
-        .stat-card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            transition: 0.3s;
-        }
-        .stat-card:hover { transform: translateY(-5px); }
-        
-        /* Status Badges */
+        .stat-card { border: none; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: white; }
         .badge-new { background: #e3f2fd; color: #0d47a1; }
         .badge-contacted { background: #fff3e0; color: #e65100; }
         .badge-won { background: #e8f5e9; color: #1b5e20; }
         .badge-lost { background: #ffebee; color: #b71c1c; }
-        
         .table { background: white; border-radius: 15px; overflow: hidden; }
         .search-box { border-radius: 25px; padding-left: 20px; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar d-none d-md-block">
+    <div class="sidebar">
         <h4 class="fw-bold text-primary mb-4">Justdial CRM</h4>
         <nav class="nav flex-column">
             <a class="nav-link active" href="/"><i class="bi bi-grid-1x2-fill me-2"></i> Dashboard</a>
@@ -59,88 +35,44 @@
     <div class="main-content">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fw-bold">Seller Dashboard</h2>
-            <div>
-                <a href="/api/sync-justdial" class="btn btn-primary rounded-pill"><i class="bi bi-arrow-clockwise"></i> Sync Leads</a>
-            </div>
+            <a href="/api/sync-justdial" class="btn btn-primary rounded-pill"><i class="bi bi-arrow-clockwise"></i> Sync Leads</a>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} alert-dismissible fade show rounded-4 shadow-sm" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-              </div>
+            {% for cat, msg in messages %}
+              <div class="alert alert-{{ cat }} alert-dismissible fade show rounded-4 shadow-sm">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
-        {% if follow_up_needed > 0 %}
-        <div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex align-items-center mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
-            <div>
-                <strong>Attention!</strong> Aapke paas {{ follow_up_needed }} aisi leads hain jinpar 24h se koi action nahi liya gaya.
-            </div>
-        </div>
-        {% endif %}
-
         <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="card stat-card p-3 bg-white">
-                    <span class="text-muted small fw-bold">TOTAL LEADS</span>
-                    <h3 class="fw-bold text-dark mt-1 mb-0">{{ total }}</h3>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stat-card p-3 bg-white">
-                    <span class="text-muted small fw-bold">NEW LEADS</span>
-                    <h3 class="fw-bold text-primary mt-1 mb-0">{{ pending }}</h3>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stat-card p-3 bg-white">
-                    <span class="text-muted small fw-bold">CONVERTED (WON)</span>
-                    <h3 class="fw-bold text-success mt-1 mb-0">{{ won }}</h3>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stat-card p-3 bg-white">
-                    <span class="text-muted small fw-bold">CONVERSION RATE</span>
-                    <h3 class="fw-bold text-warning mt-1 mb-0">{{ conv_rate }}%</h3>
-                </div>
-            </div>
+            <div class="col-md-3"><div class="card stat-card p-3"><span class="text-muted small fw-bold">TOTAL LEADS</span><h3 class="fw-bold text-dark mt-1 mb-0">{{ total }}</h3></div></div>
+            <div class="col-md-3"><div class="card stat-card p-3"><span class="text-muted small fw-bold">NEW LEADS</span><h3 class="fw-bold text-primary mt-1 mb-0">{{ pending }}</h3></div></div>
+            <div class="col-md-3"><div class="card stat-card p-3"><span class="text-muted small fw-bold">CONVERTED (WON)</span><h3 class="fw-bold text-success mt-1 mb-0">{{ won }}</h3></div></div>
+            <div class="col-md-3"><div class="card stat-card p-3"><span class="text-muted small fw-bold">CONVERSION RATE</span><h3 class="fw-bold text-warning mt-1 mb-0">{{ conv_rate }}%</h3></div></div>
         </div>
 
         <div class="row mb-3">
             <div class="col-12 d-flex gap-2">
-                <a href="/" class="btn btn-sm btn-light border rounded-pill px-3 shadow-sm">
-                    <i class="bi bi-list-ul me-1"></i> All Leads
-                </a>
-                <a href="/?status=New" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
-                    <i class="bi bi-plus-circle me-1"></i> New
-                </a>
-                <a href="/?status=Contacted" class="btn btn-sm btn-outline-warning rounded-pill px-3 shadow-sm">
-                    <i class="bi bi-telephone me-1"></i> Contacted
-                </a>
-                <a href="/?status=Converted" class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-sm">
-                    <i class="bi bi-check-circle me-1"></i> Won
-                </a>
-                <a href="/?status=Lost" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm">
-                    <i class="bi bi-x-circle me-1"></i> Lost
-                </a>
+                <a href="/" class="btn btn-sm btn-light border rounded-pill px-3 shadow-sm">All Leads</a>
+                <a href="/?status=New" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">New</a>
+                <a href="/?status=Contacted" class="btn btn-sm btn-outline-warning rounded-pill px-3 shadow-sm">Contacted</a>
+                <a href="/?status=Converted" class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-sm">Won</a>
+                <a href="/?status=Lost" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm">Lost</a>
             </div>
         </div>
 
         <div class="row g-4 mb-4">
             <div class="col-md-6">
-                <div class="card p-4 shadow-sm border-0 h-100" style="border-radius:15px;">
-                    <h5 class="mb-3 text-muted">Leads Analytics (Candlestick)</h5>
-                    <canvas id="candleChart" height="140"></canvas>
+                <div class="card p-4 shadow-sm border-0" style="border-radius:15px;">
+                    <h5 class="text-muted mb-3"><i class="bi bi-bar-chart-fill me-2"></i>Daily Volume (Bar Chart)</h5>
+                    <canvas id="barChart" height="140"></canvas>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card p-4 shadow-sm border-0 h-100" style="border-radius:15px;">
-                    <h5 class="mb-3 text-muted">Leads Acquisition Trend (Line)</h5>
+                <div class="card p-4 shadow-sm border-0" style="border-radius:15px;">
+                    <h5 class="text-muted mb-3"><i class="bi bi-graph-up me-2"></i>Growth Trend (Line Chart)</h5>
                     <canvas id="lineChart" height="140"></canvas>
                 </div>
             </div>
@@ -149,25 +81,17 @@
         <div class="row mb-4">
             <div class="col-md-6">
                 <form action="/" method="GET" class="d-flex">
-                    <input type="text" name="search" class="form-control search-box shadow-sm me-2" placeholder="Search customer name or phone..." value="{{ request.args.get('search', '') }}">
+                    <input type="text" name="search" class="form-control search-box shadow-sm me-2" placeholder="Search customer name..." value="{{ request.args.get('search', '') }}">
                     <button type="submit" class="btn btn-dark rounded-pill px-4">Search</button>
                 </form>
             </div>
         </div>
 
-        <div class="card stat-card border-0">
+        <div class="card stat-card border-0 shadow-sm">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
-                        <tr>
-                            <th class="ps-4">Customer</th>
-                            <th>Phone</th>
-                            <th>Service Query</th>
-                            <th>Date Received</th>
-                            <th>Status</th>
-                            <th>Notes</th>
-                            <th class="text-end pe-4">Actions</th>
-                        </tr>
+                        <tr><th class="ps-4">Customer</th><th>Phone</th><th>Service Query</th><th>Status</th><th>Notes</th><th class="text-end pe-4">Actions</th></tr>
                     </thead>
                     <tbody>
                         {% for lead in leads %}
@@ -175,29 +99,16 @@
                             <td class="ps-4 fw-bold">{{ lead.customer_name }}</td>
                             <td>{{ lead.phone }}</td>
                             <td><span class="text-muted">{{ lead.product_query if lead.product_query else '' }}</span></td>
-                            <td>{{ lead.timestamp.strftime('%d %b, %H:%M') }}</td>
                             <td>
-                                {% if lead.status == 'New' or not lead.status %}
-                                    <span class="badge badge-new text-primary">New</span>
-                                {% elif lead.status == 'Contacted' %}
-                                    <span class="badge badge-contacted text-warning">Contacted</span>
-                                {% elif lead.status == 'Converted' %}
-                                    <span class="badge badge-won text-success">Converted</span>
-                                {% else %}
-                                    <span class="badge badge-lost text-danger">Lost</span>
-                                {% endif %}
+                                <span class="badge {% if lead.status=='Converted' %}badge-won{% elif lead.status=='Contacted' %}badge-contacted{% elif lead.status=='Lost' %}badge-lost{% else %}badge-new{% endif %}">
+                                    {{ lead.status }}
+                                </span>
                             </td>
                             <td>
-                                <input type="text" 
-                                       class="form-control form-control-sm border-0 bg-light" 
-                                       placeholder="Add note..." 
-                                       value="{{ lead.notes if lead.notes else '' }}" 
-                                       onchange="updateNote({{ lead.id }}, this)"
-                                       style="border-radius: 8px; min-width: 150px;">
-                            </td> 
+                                <input type="text" class="form-control form-control-sm border-0 bg-light" placeholder="Add note..." value="{{ lead.notes if lead.notes else '' }}" onchange="updateNote({{ lead.id }}, this)" style="border-radius: 8px;">
+                            </td>
                             <td class="text-end pe-4">
                                 <a href="https://wa.me/91{{ lead.phone }}" target="_blank" class="btn btn-sm btn-success rounded-pill me-1"><i class="bi bi-whatsapp"></i></a>
-                                
                                 <div class="btn-group">
                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-pill" data-bs-toggle="dropdown">Status</button>
                                     <ul class="dropdown-menu shadow">
@@ -206,8 +117,7 @@
                                         <li><a class="dropdown-item text-danger" href="/update-status/{{ lead.id }}/Lost">Mark Lost</a></li>
                                     </ul>
                                 </div>
-
-                                <a href="/delete-lead/{{ lead.id }}" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('Delete this lead?')"><i class="bi bi-trash"></i></a>
+                                <a href="/delete-lead/{{ lead.id }}" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('Delete?')"><i class="bi bi-trash"></i></a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -218,98 +128,45 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
-    <script src="https://cdn.jsdelivr.net/npm/luxon"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Auto-refresh page every 5 minutes
-        setTimeout(function(){ window.location.reload(); }, 300000);
-    </script>
-
-    <script>
-    // Real-Time Note Syncing Function
     function updateNote(id, inputElement) {
-        const noteValue = inputElement.value;
-        inputElement.style.opacity = "0.5";
-
         fetch(`/update-note/${id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ notes: noteValue })
-        })
-        .then(response => response.json())
-        .then(data => {
-            inputElement.style.opacity = "1";
+            body: JSON.stringify({ notes: inputElement.value })
+        }).then(res => res.json()).then(data => {
             if(data.status === "success") {
-                inputElement.style.border = "1px solid #28a745";
-                setTimeout(()=> { inputElement.style.border = "none"; }, 2000);
-            } else {
-                inputElement.style.border = "1px solid #dc3545";
+                inputElement.style.border = "1px solid green";
+                setTimeout(() => { inputElement.style.border = "none"; }, 1500);
             }
-        })
-        .catch(error => {
-             console.error('Error:', error);
-             inputElement.style.opacity = "1";
-             inputElement.style.border = "1px solid #dc3545";
         });
     }
-    </script>
 
-    <script>
-    const chartData = {{ daily_chart_data | tojson }};
+    // Chart.js Data Logic Injection
+    const labels = {{ chart_labels | tojson }};
+    const values = {{ chart_values | tojson }};
 
-    // 1. Candlestick Chart Execution
-    const candleCtx = document.getElementById('candleChart').getContext('2d');
-    new Chart(candleCtx, {
-        type: 'candlestick',
+    // 1. Rendering Bar Chart
+    new Chart(document.getElementById('barChart'), {
+        type: 'bar',
         data: {
-            datasets: [{
-                label: 'Daily Leads Structure',
-                data: chartData
-            }]
+            labels: labels,
+            datasets: [{ label: 'Daily Leads Volume', data: values, backgroundColor: '#0052cc', borderRadius: 6 }]
         },
-        options: {
-            responsive: true,
-            scales: {
-                x: {
-                    type: 'time',
-                    time: { unit: 'day' }
-                }
-            }
-        }
+        options: { responsive: true }
     });
 
-    // 2. Line Chart Execution
-    const lineCtx = document.getElementById('lineChart').getContext('2d');
-    new Chart(lineCtx, {
+    // 2. Rendering Line Chart
+    new Chart(document.getElementById('lineChart'), {
         type: 'line',
         data: {
-            labels: chartData.map(item => item.x),
-            datasets: [{
-                label: 'Acquisition Volume',
-                data: chartData.map(item => item.c),
-                borderColor: '#0052cc',
-                backgroundColor: 'rgba(0, 82, 204, 0.05)',
-                fill: true,
-                tension: 0.3
-            }]
+            labels: labels,
+            datasets: [{ label: 'Growth Trend', data: values, borderColor: '#198754', tension: 0.3, fill: true, backgroundColor: 'rgba(25, 135, 84, 0.05)' }]
         },
-        options: {
-            responsive: true
-        }
+        options: { responsive: true }
     });
-    </script>
-
-    <script>
-    // Browser Notifications API Management
-    function requestNotificationPermission() {
-        if ("Notification" in window) {
-            Notification.requestPermission();
-        }
-    }
-    document.addEventListener('DOMContentLoaded', requestNotificationPermission);
     </script>
 </body>
 </html>
