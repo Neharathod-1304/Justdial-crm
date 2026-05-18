@@ -12,7 +12,7 @@ app = Flask(__name__)
 # Config
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///justdial_leads.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'teztecch_secret_key')
+app.config['SECRET_KEY'] = 'teztecch_professional_crm_key'
 
 db = SQLAlchemy(app)
 
@@ -21,14 +21,12 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-
 # ================= MODELS =================
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
-
 
 class Lead(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -40,42 +38,31 @@ class Lead(db.Model):
     notes = db.Column(db.Text, default="")
     timestamp = db.Column(db.DateTime, default=datetime.now)
 
-
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
-
 
 # ================= INITIAL SETUP =================
 
 with app.app_context():
     db.create_all()
-
-    # Default admin user
     if not User.query.filter_by(username='admin').first():
         admin = User(username='admin', password='123')
         db.session.add(admin)
         db.session.commit()
-
 
 # ================= ROUTES =================
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        user = User.query.filter_by(
-            username=request.form.get('username'),
-            password=request.form.get('password')
-        ).first()
-
+        user = User.query.filter_by(username=request.form.get('username'), password=request.form.get('password')).first()
         if user:
             login_user(user)
             return redirect(url_for('index'))
         else:
             flash('Invalid Username or Password', 'danger')
-
     return render_template('login.html')
-
 
 @app.route('/logout')
 @login_required
@@ -83,182 +70,102 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-
-# ================= DASHBOARD =================
-
 @app.route('/')
 @login_required
 def index():
     search_query = request.args.get('search', '')
     status_filter = request.args.get('status', '')
-
     query = Lead.query
 
-    # Search Logic
     if search_query:
-        query = query.filter(
-            (Lead.customer_name.like(f'%{search_query}%')) |
-            (Lead.phone.like(f'%{search_query}%')) |
-            (Lead.product_query.like(f'%{search_query}%'))
-        )
-
-    # Filter Logic
+        query = query.filter((Lead.customer_name.like(f'%{search_query}%')) | (Lead.phone.like(f'%{search_query}%')))
     if status_filter:
         query = query.filter_by(status=status_filter)
 
     leads = query.order_by(Lead.id.desc()).all()
 
-    # Calculate Summary Statistics
+    # Summary Statistics Calculations
     total = Lead.query.count()
     pending = Lead.query.filter_by(status='New').count()
     won = Lead.query.filter_by(status='Converted').count()
-    contacted = Lead.query.filter_by(status='Contacted').count()
-
-    follow_up_needed = Lead.query.filter(
-        Lead.status == 'New',
-        Lead.timestamp < datetime.now() - timedelta(hours=24)
-    ).count()
-
     conv_rate = round((won / total * 100), 1) if total > 0 else 0
+    follow_up_needed = Lead.query.filter(Lead.status == 'New', Lead.timestamp < datetime.now() - timedelta(hours=24)).count()
 
-    # Grouping Data for Charts
-    daily_counts = db.session.query(
-        func.date(Lead.timestamp),
-        func.count(Lead.id)
+    # Chart Data (Corrected for Bar/Line Charts Volume)
+    daily_stats = db.session.query(
+        func.date(Lead.timestamp).label('date'),
+        func.count(Lead.id).label('count')
     ).group_by(func.date(Lead.timestamp)).order_by(func.date(Lead.timestamp)).all()
 
-    daily_chart_data = []
-
-    for i, row in enumerate(daily_counts):
-        date_str = str(row[0])
-        count = row[1]
-        prev = daily_counts[i-1][1] if i > 0 else count
-
-        daily_chart_data.append({
-            "x": date_str,
-            "o": prev,
-            "h": max(prev, count) + 2,
-            "l": max(0, min(prev, count) - 2),
-            "c": count
-        })
+    # Formatting data for JavaScript Charts
+    chart_labels = [datetime.strptime(str(row.date), '%Y-%m-%d').strftime('%d %b') for row in daily_stats]
+    chart_values = [row.count for row in daily_stats]
 
     return render_template('dashboard.html',
-        leads=leads,
-        total=total,
-        pending=pending,
-        won=won,
-        contacted=contacted,
-        conv_rate=conv_rate,
-        follow_up_needed=follow_up_needed,
-        daily_chart_data=daily_chart_data
+        leads=leads, total=total, pending=pending, won=won,
+        conv_rate=conv_rate, follow_up_needed=follow_up_needed,
+        chart_labels=chart_labels, chart_values=chart_values
     )
-
-
-# ================= UPDATE STATUS =================
 
 @app.route('/update-status/<int:id>/<string:new_status>')
 @login_required
 def update_status(id, new_status):
     lead = db.session.get(Lead, id)
-
     if lead:
         lead.status = new_status
         db.session.commit()
         flash(f'Status updated to {new_status}', 'success')
-
     return redirect(url_for('index'))
-
-
-# ================= DELETE =================
-
-@app.route('/delete-lead/<int:id>')
-@login_required
-def delete_lead(id):
-    lead = db.session.get(Lead, id)
-
-    if lead:
-        db.session.delete(lead)
-        db.session.commit()
-        flash('Lead deleted', 'warning')
-
-    return redirect(url_for('index'))
-
-
-# ================= UPDATE NOTE =================
 
 @app.route('/update-note/<int:id>', methods=['POST'])
 @login_required
 def update_note(id):
     data = request.get_json() or {}
     lead = db.session.get(Lead, id)
-
     if lead:
         lead.notes = data.get('notes', '')
         db.session.commit()
         return jsonify({"status": "success"}), 200
+    return jsonify({"status": "error"}), 404
 
-    return jsonify({"status": "error", "message": "Lead not found"}), 404
+@app.route('/delete-lead/<int:id>')
+@login_required
+def delete_lead(id):
+    lead = db.session.get(Lead, id)
+    if lead:
+        db.session.delete(lead)
+        db.session.commit()
+        flash('Lead deleted successfully', 'warning')
+    return redirect(url_for('index'))
 
-
-# ================= EXPORT =================
+@app.route('/api/sync-justdial')
+@login_required
+def sync():
+    # Fresh Sample Data for Dynamic Charts Generation
+    sample_leads = [
+        Lead(customer_name="Pooja Verma", phone="8222333444", product_query="UI/UX Audit", status="Lost", timestamp=datetime.now() - timedelta(days=2)),
+        Lead(customer_name="Sameer Khan", phone="9111222333", product_query="Content Writing", status="Lost", timestamp=datetime.now() - timedelta(days=2)),
+        Lead(customer_name="Kavita Iyer", phone="9555443322", product_query="Graphic Design", status="Contacted", timestamp=datetime.now() - timedelta(days=1)),
+        Lead(customer_name="Rohan Deshmukh", phone="8811223344", product_query="E-commerce Website", status="Contacted", timestamp=datetime.now() - timedelta(days=1)),
+        Lead(customer_name="Anjali Gupta", phone="9900112233", product_query="Social Media Marketing", status="Converted", timestamp=datetime.now()),
+        Lead(customer_name="Vikram Rathore", phone="7766554433", product_query="App Development", status="Converted", timestamp=datetime.now())
+    ]
+    db.session.add_all(sample_leads)
+    db.session.commit()
+    flash("Leads Synced Successfully!", "success")
+    return redirect(url_for('index'))
 
 @app.route('/export-leads')
 @login_required
 def export_leads():
     leads = Lead.query.all()
-
-    data = []
-    for lead in leads:
-        data.append({
-            "Name": lead.customer_name,
-            "Phone": lead.phone,
-            "Service": lead.product_query if lead.product_query else "",
-            "Status": lead.status,
-            "Notes": lead.notes if lead.notes else "",
-            "Date": lead.timestamp.strftime('%d %b %Y')
-        })
-
+    data = [{"Name": l.customer_name, "Phone": l.phone, "Service": l.product_query, "Status": l.status, "Notes": l.notes} for l in leads]
     df = pd.DataFrame(data)
-
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False)
-
     output.seek(0)
-
-    return send_file(output,
-        download_name="Leads.xlsx",
-        as_attachment=True)
-
-
-# ================= SYNC (DUMMY API) =================
-
-@app.route('/api/sync-justdial')
-@login_required
-def sync():
-    sample_leads = [
-        Lead(customer_name="Pooja Verma", phone="8222333444", product_query="UI/UX Audit", status="Lost"),
-        Lead(customer_name="Sameer Khan", phone="9111222333", product_query="Content Writing", status="Lost"),
-        Lead(customer_name="Kavita Iyer", phone="9555443322", product_query="Graphic Design", status="Contacted"),
-        Lead(customer_name="Rohan Deshmukh", phone="8811223344", product_query="E-commerce Website", status="Contacted"),
-        Lead(customer_name="Anjali Gupta", phone="9900112233", product_query="Social Media Marketing", status="Converted"),
-        Lead(customer_name="Vikram Rathore", phone="7766554433", product_query="Mobile App Development", status="Converted"),
-        Lead(customer_name="Priya Singh", phone="8877665544", product_query="Logo Design", status="Lost"),
-        Lead(customer_name="Amit Sharma", phone="9123456789", product_query="SEO Services", status="Contacted"),
-        Lead(customer_name="Suresh Kumar", phone="9988776655", product_query="Web Design", status="Contacted"),
-        Lead(customer_name="Rahul Mehta", phone="9812345678", product_query="CCTV Installation", status="Contacted"),
-    ]
-
-    # Clean previous records and insert fresh sample entries
-    Lead.query.delete()
-    db.session.add_all(sample_leads)
-    db.session.commit()
-
-    flash("10 Leads Synced Successfully!", "success")
-    return redirect(url_for('index'))
-
-
-# ================= RUN =================
+    return send_file(output, download_name="Leads.xlsx", as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True)
