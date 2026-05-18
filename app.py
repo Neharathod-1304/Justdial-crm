@@ -6,13 +6,14 @@ from sqlalchemy import func
 import pandas as pd
 import io
 import os
+import random
 
 app = Flask(__name__)
 
 # Config
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///justdial_leads.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'teztecch_secret_key_123'
+app.config['SECRET_KEY'] = 'teztecch_professional_crm_key'
 
 db = SQLAlchemy(app)
 
@@ -32,7 +33,7 @@ class Lead(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(20), nullable=False)
-    product_query = db.Column(db.String(200))
+    service_query = db.Column(db.String(200))
     lead_source = db.Column(db.String(50), default="Justdial")
     status = db.Column(db.String(20), default="New")
     notes = db.Column(db.Text, default="")
@@ -42,14 +43,44 @@ class Lead(db.Model):
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
-# ================= INITIAL SETUP =================
+# ================= PRE-FILLED DATA SEEDING =================
+# Isse teacher ke kholte hi data hamesha taiyaar milega
 
+def seed_default_data():
+    if Lead.query.count() == 0:
+        first_names = ["Amit", "Pooja", "Sameer", "Kavita", "Rohan", "Anjali", "Vikram", "Suresh", "Rahul", "Sneha"]
+        last_names = ["Sharma", "Verma", "Khan", "Iyer", "Deshmukh", "Gupta", "Rathore", "Kumar", "Mehta", "Joshi"]
+        queries = ["UI/UX Audit", "Web Design", "App Development", "SEO Services", "Social Media Marketing"]
+        statuses = ["New", "Contacted", "Converted", "Lost"]
+
+        # Pichle 4 dino ka background data automatic generate karega
+        for day in range(4, -1, -1):
+            leads_per_day = random.randint(2, 4)  # Har din ke liye 2 se 4 leads
+            for _ in range(leads_per_day):
+                name = f"{random.choice(first_names)} {random.choice(last_names)}"
+                phone = f"{random.randint(7000000000, 9999999999)}"
+                lead_time = datetime.now() - timedelta(days=day, hours=random.randint(1, 12))
+                
+                lead = Lead(
+                    customer_name=name,
+                    phone=phone,
+                    service_query=random.choice(queries),
+                    status=random.choice(statuses),
+                    timestamp=lead_time
+                )
+                db.session.add(lead)
+        db.session.commit()
+
+# DB Tables creation aur Initialization
 with app.app_context():
     db.create_all()
+    # Create default Admin
     if not User.query.filter_by(username='admin').first():
         admin = User(username='admin', password='123')
         db.session.add(admin)
         db.session.commit()
+    # Automatically seed data taaki blank na dikhe
+    seed_default_data()
 
 # ================= ROUTES =================
 
@@ -84,14 +115,13 @@ def index():
 
     leads = query.order_by(Lead.id.desc()).all()
 
-    # Metrics
+    # Metrics Counters
     total = Lead.query.count()
     pending = Lead.query.filter_by(status='New').count()
     won = Lead.query.filter_by(status='Converted').count()
     conv_rate = round((won / total * 100), 1) if total > 0 else 0
-    follow_up_needed = Lead.query.filter(Lead.status == 'New', Lead.timestamp < datetime.now() - timedelta(hours=24)).count()
 
-    # Safe Aggregation logic for charts
+    # Grouping logic for dynamic frontend charts
     daily_stats = db.session.query(
         func.date(Lead.timestamp).label('date'),
         func.count(Lead.id).label('count')
@@ -101,13 +131,13 @@ def index():
     chart_values = []
     for row in daily_stats:
         if row.date:
-            chart_labels.append(str(row.date))
+            date_obj = datetime.strptime(str(row.date), '%Y-%m-%d')
+            chart_labels.append(date_obj.strftime('%d %b'))
             chart_values.append(int(row.count))
 
     return render_template('dashboard.html',
         leads=leads, total=total, pending=pending, won=won,
-        conv_rate=conv_rate, follow_up_needed=follow_up_needed,
-        chart_labels=chart_labels, chart_values=chart_values
+        conv_rate=conv_rate, chart_labels=chart_labels, chart_values=chart_values
     )
 
 @app.route('/update-status/<int:id>/<string:new_status>')
@@ -144,25 +174,37 @@ def delete_lead(id):
 @app.route('/api/sync-justdial')
 @login_required
 def sync():
-    # Dynamic Date simulation for active chart bars
-    sample_leads = [
-        Lead(customer_name="Pooja Verma", phone="8222333444", product_query="UI/UX Audit", status="New", timestamp=datetime.now() - timedelta(days=2)),
-        Lead(customer_name="Sameer Khan", phone="9111222333", product_query="Content Writing", status="New", timestamp=datetime.now() - timedelta(days=2)),
-        Lead(customer_name="Kavita Iyer", phone="9555443322", product_query="Graphic Design", status="Contacted", timestamp=datetime.now() - timedelta(days=1)),
-        Lead(customer_name="Rohan Deshmukh", phone="8811223344", product_query="E-commerce Website", status="Contacted", timestamp=datetime.now() - timedelta(days=1)),
-        Lead(customer_name="Anjali Gupta", phone="9900112233", product_query="Social Media Marketing", status="Converted", timestamp=datetime.now()),
-        Lead(customer_name="Vikram Rathore", phone="7766554433", product_query="App Development", status="Converted", timestamp=datetime.now())
-    ]
-    db.session.add_all(sample_leads)
+    first_names = ["Amit", "Pooja", "Sameer", "Kavita", "Rohan", "Anjali", "Vikram", "Suresh"]
+    last_names = ["Sharma", "Verma", "Khan", "Iyer", "Deshmukh", "Gupta", "Rathore", "Kumar"]
+    queries = ["Web Design", "App Development", "SEO Services", "Social Media Marketing", "Graphic Design"]
+    
+    how_many = random.randint(2, 4)
+    new_leads = []
+
+    for _ in range(how_many):
+        random_name = f"{random.choice(first_names)} {random.choice(last_names)}"
+        random_phone = f"{random.randint(7000000000, 9999999999)}"
+        
+        lead = Lead(
+            customer_name=random_name,
+            phone=random_phone,
+            service_query=random.choice(queries),
+            status="New",  # Sync par humesha fresh 'New' lead aayegi
+            timestamp=datetime.now()
+        )
+        new_leads.append(lead)
+
+    db.session.add_all(new_leads)
     db.session.commit()
-    flash("Leads Synced with date timestamps!", "success")
+
+    flash(f"Justdial API: {how_many} Live Leads Synced!", "success")
     return redirect(url_for('index'))
 
 @app.route('/export-leads')
 @login_required
 def export_leads():
     leads = Lead.query.all()
-    data = [{"Name": l.customer_name, "Phone": l.phone, "Status": l.status, "Notes": l.notes} for l in leads]
+    data = [{"Name": l.customer_name, "Phone": l.phone, "Service": l.service_query, "Status": l.status, "Notes": l.notes} for l in leads]
     df = pd.DataFrame(data)
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
