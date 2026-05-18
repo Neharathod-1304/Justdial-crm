@@ -9,14 +9,14 @@ import os
 
 app = Flask(__name__)
 
-# 🔧 Config
+# Config
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///justdial_leads.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'secret123')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'teztecch_secret_key')
 
 db = SQLAlchemy(app)
 
-# 🔐 Login Setup
+# Login Setup
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -89,13 +89,12 @@ def logout():
 @app.route('/')
 @login_required
 def index():
-
     search_query = request.args.get('search', '')
     status_filter = request.args.get('status', '')
 
     query = Lead.query
 
-    # 🔍 Search
+    # Search Logic
     if search_query:
         query = query.filter(
             (Lead.customer_name.like(f'%{search_query}%')) |
@@ -103,13 +102,13 @@ def index():
             (Lead.product_query.like(f'%{search_query}%'))
         )
 
-    # 🎯 Filter
+    # Filter Logic
     if status_filter:
         query = query.filter_by(status=status_filter)
 
     leads = query.order_by(Lead.id.desc()).all()
 
-    # 📊 Stats
+    # Calculate Summary Statistics
     total = Lead.query.count()
     pending = Lead.query.filter_by(status='New').count()
     won = Lead.query.filter_by(status='Converted').count()
@@ -122,24 +121,24 @@ def index():
 
     conv_rate = round((won / total * 100), 1) if total > 0 else 0
 
-    # 📊 REAL CHART DATA
+    # Grouping Data for Charts
     daily_counts = db.session.query(
         func.date(Lead.timestamp),
         func.count(Lead.id)
-    ).group_by(func.date(Lead.timestamp)).all()
+    ).group_by(func.date(Lead.timestamp)).order_by(func.date(Lead.timestamp)).all()
 
     daily_chart_data = []
 
     for i, row in enumerate(daily_counts):
-        date = str(row[0])
+        date_str = str(row[0])
         count = row[1]
         prev = daily_counts[i-1][1] if i > 0 else count
 
         daily_chart_data.append({
-            "x": date,
+            "x": date_str,
             "o": prev,
             "h": max(prev, count) + 2,
-            "l": min(prev, count) - 2,
+            "l": max(0, min(prev, count) - 2),
             "c": count
         })
 
@@ -190,15 +189,15 @@ def delete_lead(id):
 @app.route('/update-note/<int:id>', methods=['POST'])
 @login_required
 def update_note(id):
-    data = request.get_json()
+    data = request.get_json() or {}
     lead = db.session.get(Lead, id)
 
     if lead:
         lead.notes = data.get('notes', '')
         db.session.commit()
-        return jsonify({"status": "success"})
+        return jsonify({"status": "success"}), 200
 
-    return jsonify({"status": "error"}), 404
+    return jsonify({"status": "error", "message": "Lead not found"}), 404
 
 
 # ================= EXPORT =================
@@ -213,9 +212,9 @@ def export_leads():
         data.append({
             "Name": lead.customer_name,
             "Phone": lead.phone,
-            "Service": lead.product_query,
+            "Service": lead.product_query if lead.product_query else "",
             "Status": lead.status,
-            "Notes": lead.notes,
+            "Notes": lead.notes if lead.notes else "",
             "Date": lead.timestamp.strftime('%d %b %Y')
         })
 
@@ -238,26 +237,25 @@ def export_leads():
 @login_required
 def sync():
     sample_leads = [
-        Lead(customer_name="Pooja Verma", phone="8222333444", service_query="UI/UX Audit", status="Lost"),
-        Lead(customer_name="Sameer Khan", phone="9111222333", service_query="Content Writing", status="Lost"),
-        Lead(customer_name="Kavita Iyer", phone="9555443322", service_query="Graphic Design", status="Contacted"),
-        Lead(customer_name="Rohan Deshmukh", phone="8811223344", service_query="E-commerce Website", status="Contacted"),
-        Lead(customer_name="Anjali Gupta", phone="9900112233", service_query="Social Media Marketing", status="Converted"),
-        Lead(customer_name="Vikram Rathore", phone="7766554433", service_query="Mobile App Development", status="Converted"),
-        Lead(customer_name="Priya Singh", phone="8877665544", service_query="Logo Design", status="Lost"),
-        Lead(customer_name="Amit Sharma", phone="9123456789", service_query="SEO Services", status="Contacted"),
-        Lead(customer_name="Suresh Kumar", phone="9988776655", service_query="Web Design", status="Contacted"),
-        Lead(customer_name="Rahul Mehta", phone="9812345678", service_query="CCTV Installation", status="Contacted"),
+        Lead(customer_name="Pooja Verma", phone="8222333444", product_query="UI/UX Audit", status="Lost"),
+        Lead(customer_name="Sameer Khan", phone="9111222333", product_query="Content Writing", status="Lost"),
+        Lead(customer_name="Kavita Iyer", phone="9555443322", product_query="Graphic Design", status="Contacted"),
+        Lead(customer_name="Rohan Deshmukh", phone="8811223344", product_query="E-commerce Website", status="Contacted"),
+        Lead(customer_name="Anjali Gupta", phone="9900112233", product_query="Social Media Marketing", status="Converted"),
+        Lead(customer_name="Vikram Rathore", phone="7766554433", product_query="Mobile App Development", status="Converted"),
+        Lead(customer_name="Priya Singh", phone="8877665544", product_query="Logo Design", status="Lost"),
+        Lead(customer_name="Amit Sharma", phone="9123456789", product_query="SEO Services", status="Contacted"),
+        Lead(customer_name="Suresh Kumar", phone="9988776655", product_query="Web Design", status="Contacted"),
+        Lead(customer_name="Rahul Mehta", phone="9812345678", product_query="CCTV Installation", status="Contacted"),
     ]
 
+    # Clean previous records and insert fresh sample entries
     Lead.query.delete()
     db.session.add_all(sample_leads)
     db.session.commit()
 
     flash("10 Leads Synced Successfully!", "success")
-    return redirect('/')
-
-    return redirect('/')
+    return redirect(url_for('index'))
 
 
 # ================= RUN =================
