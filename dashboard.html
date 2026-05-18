@@ -35,7 +35,7 @@
     <div class="main-content">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fw-bold">Seller Dashboard</h2>
-            <a href="/api/sync-justdial" class="btn btn-primary rounded-pill"><i class="bi bi-arrow-clockwise"></i> Sync Leads</a>
+            <a href="/api/sync-justdial" class="btn btn-primary rounded-pill shadow-sm"><i class="bi bi-arrow-clockwise"></i> Sync Leads</a>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -98,10 +98,10 @@
                         <tr>
                             <td class="ps-4 fw-bold">{{ lead.customer_name }}</td>
                             <td>{{ lead.phone }}</td>
-                            <td><span class="text-muted">{{ lead.product_query if lead.product_query else '' }}</span></td>
+                            <td><span class="text-muted">{{ lead.service_query if lead.service_query else '' }}</span></td>
                             <td>
                                 <span class="badge {% if lead.status=='Converted' %}badge-won{% elif lead.status=='Contacted' %}badge-contacted{% elif lead.status=='Lost' %}badge-lost{% else %}badge-new{% endif %}">
-                                    {{ lead.status if lead.status else 'New' }}
+                                    {{ lead.status }}
                                 </span>
                             </td>
                             <td>
@@ -144,19 +144,19 @@
         });
     }
 
-    // Direct JSON Arrays from Flask
-    const rawLabels = {{ chart_labels | tojson | safe }};
-    const chartValues = {{ chart_values | tojson | safe }};
+    // Direct JSON Arrays Mapping safely
+    const labelsData = {{ chart_labels | tojson | safe }};
+    const valuesData = {{ chart_values | tojson | safe }};
 
-    // 1. Bar Chart Initializer
+    // 1. Bar Chart Control Setup
     const barCtx = document.getElementById('barChart').getContext('2d');
     new Chart(barCtx, {
         type: 'bar',
         data: {
-            labels: rawLabels,
+            labels: labelsData,
             datasets: [{
-                label: 'Daily Leads Volume',
-                data: chartValues,
+                label: 'Leads Received Count',
+                data: valuesData,
                 backgroundColor: '#0052cc',
                 borderRadius: 5
             }]
@@ -167,15 +167,15 @@
         }
     });
 
-    // 2. Line Chart Initializer
+    // 2. Line Chart Control Setup
     const lineCtx = document.getElementById('lineChart').getContext('2d');
     new Chart(lineCtx, {
         type: 'line',
         data: {
-            labels: rawLabels,
+            labels: labelsData,
             datasets: [{
-                label: 'Growth Trend',
-                data: chartValues,
+                label: 'Growth Volume Trend',
+                data: valuesData,
                 borderColor: '#198754',
                 backgroundColor: 'rgba(25, 135, 84, 0.05)',
                 tension: 0.3,
